@@ -1,0 +1,32 @@
+# Python bytecode
+__pycache__/
+*.py[cod]
+
+# Flask instance folder (database, etc.)
+instance/
+
+# SQLite database
+*.db
+
+# Environment files
+.env
+.flaskenv
+
+# IDE files
+.vscode/
+.idea/
+
+# Virtual environment
+venv/
+env/
+
+# Distribution / packaging
+*.egg-info/
+dist/
+build/
+
+# Logs
+*.log
+
+# Python wheel cache
+.pip-wheel-metadata/
