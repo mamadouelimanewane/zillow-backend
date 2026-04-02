@@ -1,0 +1,877 @@
+// SCHÉMA PRISMA UNIFIÉ - DIWAAN
+// Version complète avec système de partenariat intégré
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+// ==========================================
+// MODÈLES EXISTANTS (Utilisateurs & Propriétés)
+// ==========================================
+
+model User {
+  id            String    @id @default(auto()) @map("_id") @db.ObjectId
+  email         String    @unique
+  password      String
+  name          String
+  phone         String?
+  role          UserRole  @default(USER)
+  avatar        String?
+  emailVerified DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  
+  properties    Property[]
+  favorites     Favorite[]
+  messages      Message[]  @relation("UserMessages")
+  sentMessages  Message[]  @relation("SentMessages")
+  transactions  Transaction[]
+  
+  @@map("users")
+}
+
+enum UserRole {
+  USER
+  AGENT
+  ADMIN
+  OWNER
+}
+
+model Property {
+  id              String   @id @default(auto()) @map("_id") @db.ObjectId
+  title           String
+  description     String
+  type            PropertyType
+  status          PropertyStatus @default(DRAFT)
+  transactionType TransactionType
+  price           Float
+  surface         Float
+  bedrooms        Int?
+  bathrooms       Int?
+  floor           Int?
+  yearBuilt       Int?
+  
+  address         String
+  city            String
+  neighborhood    String?
+  postalCode      String?
+  latitude        Float?
+  longitude       Float?
+  
+  images          String[]
+  features        String[]
+  
+  featured        Boolean  @default(false)
+  verified        Boolean  @default(false)
+  views           Int      @default(0)
+  
+  ownerId         String   @db.ObjectId
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  owner           User     @relation(fields: [ownerId], references: [id])
+  favorites       Favorite[]
+  transactions    Transaction[]
+  
+  @@map("properties")
+}
+
+enum PropertyType {
+  APARTMENT
+  HOUSE
+  VILLA
+  STUDIO
+  LAND
+  COMMERCIAL
+}
+
+enum PropertyStatus {
+  DRAFT
+  PENDING
+  ACTIVE
+  SOLD
+  RENTED
+  INACTIVE
+}
+
+enum TransactionType {
+  SALE
+  RENT
+}
+
+model Favorite {
+  id         String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId     String   @db.ObjectId
+  propertyId String   @db.ObjectId
+  createdAt  DateTime @default(now())
+  
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  property   Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  
+  @@unique([userId, propertyId])
+  @@map("favorites")
+}
+
+model Transaction {
+  id         String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId     String   @db.ObjectId
+  propertyId String   @db.ObjectId
+  amount     Float
+  type       TransactionType
+  status     TransactionStatus @default(PENDING)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  
+  user       User     @relation(fields: [userId], references: [id])
+  property   Property @relation(fields: [propertyId], references: [id])
+  
+  @@map("transactions")
+}
+
+enum TransactionStatus {
+  PENDING
+  COMPLETED
+  CANCELLED
+}
+
+model Message {
+  id         String   @id @default(auto()) @map("_id") @db.ObjectId
+  fromId     String   @db.ObjectId
+  toId       String   @db.ObjectId
+  subject    String?
+  content    String
+  read       Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  
+  from       User     @relation("SentMessages", fields: [fromId], references: [id])
+  to         User     @relation("UserMessages", fields: [toId], references: [id])
+  
+  @@map("messages")
+}
+
+model PropertyInquiry {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  propertyId  String
+  name        String
+  email       String
+  phone       String?
+  message     String
+  createdAt   DateTime @default(now())
+  
+  @@map("property_inquiries")
+}
+
+// ==========================================
+// SYSTÈME DE PARTENARIAT PROMOTEUR-AGENCE
+// ==========================================
+
+model Developer {
+  id                   String   @id @default(auto()) @map("_id") @db.ObjectId
+  legalName            String
+  tradeName            String?
+  rccm                 String   @unique
+  ninea                String   @unique
+  address              String
+  city                 String
+  phone                String
+  email                String   @unique
+  website              String?
+  representativeName   String
+  representativeTitle  String
+  representativePhone  String?
+  representativeEmail  String?
+  bankName             String?
+  iban                 String?
+  accountNumber        String?
+  status               DeveloperStatus @default(ACTIVE)
+  verifiedAt           DateTime?
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+  
+  partnerships         Partnership[]
+  projects             DeveloperProject[]
+  plots                DeveloperPlot[]
+  sales                DeveloperSale[]
+  pricingRules         PricingRule[]
+  
+  @@map("developers")
+}
+
+enum DeveloperStatus {
+  ACTIVE
+  SUSPENDED
+  INACTIVE
+}
+
+model RealEstateAgency {
+  id                   String   @id @default(auto()) @map("_id") @db.ObjectId
+  legalName            String
+  tradeName            String?
+  rccm                 String   @unique
+  ninea                String   @unique
+  address              String
+  city                 String
+  floor                String?
+  phone                String
+  email                String   @unique
+  website              String?
+  directorName         String
+  directorTitle        String
+  directorPhone        String?
+  directorEmail        String?
+  bankName             String?
+  iban                 String?
+  accountNumber        String?
+  totalSales           Int      @default(0)
+  totalRevenue         Float    @default(0)
+  averageMargin        Float?
+  conversionRate       Float?
+  status               AgencyStatus @default(ACTIVE)
+  verifiedAt           DateTime?
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+  
+  partnerships         Partnership[]
+  plots                DeveloperPlot[]
+  reservations         PlotReservation[]
+  sales                DeveloperSale[]
+  agents               CommercialAgent[]
+  pricingRules         PricingRule[]
+  marginConfigs        MarginConfig[]
+  commissionStructures CommissionStructure[]
+  
+  @@map("real_estate_agencies")
+}
+
+enum AgencyStatus {
+  ACTIVE
+  SUSPENDED
+  INACTIVE
+}
+
+model CommercialAgent {
+  id                   String   @id @default(auto()) @map("_id") @db.ObjectId
+  agencyId             String   @db.ObjectId
+  firstName            String
+  lastName             String
+  email                String   @unique
+  phone                String
+  avatar               String?
+  totalSales           Int      @default(0)
+  totalRevenue         Float    @default(0)
+  currentMonthSales    Int      @default(0)
+  lastMonthSales       Int      @default(0)
+  averageMargin        Float?
+  status               AgentStatus @default(ACTIVE)
+  hiredAt              DateTime @default(now())
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+  
+  agency               RealEstateAgency @relation(fields: [agencyId], references: [id], onDelete: Cascade)
+  reservations         PlotReservation[]
+  marginConfigs        MarginConfig[]
+  commissionStructures CommissionStructure[]
+  commissions          AgentCommission[]
+  
+  @@map("commercial_agents")
+}
+
+enum AgentStatus {
+  ACTIVE
+  ON_LEAVE
+  SUSPENDED
+  TERMINATED
+}
+
+model Partnership {
+  id                       String   @id @default(auto()) @map("_id") @db.ObjectId
+  developerId              String   @db.ObjectId
+  agencyId                 String   @db.ObjectId
+  contractNumber           String   @unique
+  startDate                DateTime
+  endDate                  DateTime
+  initialDuration          Int
+  autoRenewal              Boolean  @default(true)
+  renewalPeriod            Int      @default(12)
+  exclusive                Boolean  @default(false)
+  commissionRate           Float?
+  cashDiscountRate         Float    @default(5)
+  priceRevisionPeriod      Int      @default(3)
+  minDownPaymentRate       Float    @default(50)
+  notificationDelay        Int      @default(24)
+  documentDelay            Int      @default(72)
+  refundDelay              Int      @default(90)
+  defaultPaymentThreshold  Int      @default(3)
+  cancellationNoticePeriod Int      @default(60)
+  status                   PartnershipStatus @default(DRAFT)
+  signedAt                 DateTime?
+  terminatedAt             DateTime?
+  terminationReason        String?
+  developerSignature       String?
+  agencySignature          String?
+  createdAt                DateTime @default(now())
+  updatedAt                DateTime @updatedAt
+  
+  developer                Developer @relation(fields: [developerId], references: [id])
+  agency                   RealEstateAgency @relation(fields: [agencyId], references: [id])
+  clauses                  ContractClause[]
+  plots                    DeveloperPlot[]
+  priceRevisions           PlotPriceRevision[]
+  pricingRules             PricingRule[]
+  
+  @@map("partnerships")
+}
+
+enum PartnershipStatus {
+  DRAFT
+  ACTIVE
+  SUSPENDED
+  TERMINATED
+  EXPIRED
+}
+
+model ContractClause {
+  id            String   @id @default(auto()) @map("_id") @db.ObjectId
+  partnershipId String   @db.ObjectId
+  articleNumber String
+  title         String
+  content       String   @db.String
+  order         Int
+  category      ClauseCategory
+  mandatory     Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  
+  partnership   Partnership @relation(fields: [partnershipId], references: [id], onDelete: Cascade)
+  
+  @@map("contract_clauses")
+}
+
+enum ClauseCategory {
+  GENERAL
+  FINANCIAL
+  OBLIGATIONS
+  RESPONSIBILITIES
+  TERMINATION
+  CONFIDENTIALITY
+  DISPUTE
+  MISCELLANEOUS
+}
+
+model DeveloperProject {
+  id                 String   @id @default(auto()) @map("_id") @db.ObjectId
+  developerId        String   @db.ObjectId
+  name               String
+  description        String   @db.String
+  location           String
+  commune            String
+  city               String
+  region             String
+  coordinates        Json?
+  totalPlots         Int
+  availablePlots     Int
+  reservedPlots      Int      @default(0)
+  soldPlots          Int      @default(0)
+  masterPlan         String?
+  technicalFile      String?
+  administrativeDocs String[]
+  status             ProjectStatus @default(PLANNING)
+  plannedStartDate   DateTime?
+  actualStartDate    DateTime?
+  completionDate     DateTime?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+  
+  developer          Developer @relation(fields: [developerId], references: [id])
+  plots              DeveloperPlot[]
+  plotTypeConfigs    PlotTypeConfig[]
+  pricingRules       PricingRule[]
+  complianceDocs     ProjectComplianceDocument[]
+  
+  @@map("developer_projects")
+}
+
+enum ProjectStatus {
+  PLANNING
+  APPROVED
+  ACTIVE
+  SUSPENDED
+  COMPLETED
+  CANCELLED
+}
+
+model PlotTypeConfig {
+  id                String   @id @default(auto()) @map("_id") @db.ObjectId
+  projectId         String   @db.ObjectId
+  code              String
+  name              String
+  description       String?  @db.String
+  defaultSurfaceMin Float?
+  defaultSurfaceMax Float?
+  icon              String?
+  color             String?
+  features          String[]
+  basePrice         Float?
+  active            Boolean  @default(true)
+  displayOrder      Int      @default(0)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  
+  project           DeveloperProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  plots             DeveloperPlot[]
+  pricingRules      PricingRule[]
+  marginConfigs     MarginConfig[]
+  
+  @@unique([projectId, code])
+  @@map("plot_type_configs")
+}
+
+model DeveloperPlot {
+  id                     String   @id @default(auto()) @map("_id") @db.ObjectId
+  projectId              String   @db.ObjectId
+  developerId            String   @db.ObjectId
+  partnershipId          String?  @db.ObjectId
+  agencyId               String?  @db.ObjectId
+  plotTypeConfigId       String?  @db.ObjectId
+  plotNumber             String
+  block                  String?
+  lotNumber              String?
+  surfaceArea            Float
+  effectivePricePerSqm   Float?
+  effectivePricingRuleId String?
+  coordinates            Json?
+  boundaries             Json?
+  orientation            String?
+  technicalSheet         String?
+  cadastralPlan          String?
+  status                 PlotStatus @default(AVAILABLE)
+  availableFrom          DateTime @default(now())
+  reservedAt             DateTime?
+  soldAt                 DateTime?
+  withdrawnAt            DateTime?
+  withdrawalReason       String?
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
+  
+  project                DeveloperProject @relation(fields: [projectId], references: [id])
+  developer              Developer @relation(fields: [developerId], references: [id])
+  partnership            Partnership? @relation(fields: [partnershipId], references: [id])
+  agency                 RealEstateAgency? @relation(fields: [agencyId], references: [id])
+  plotTypeConfig         PlotTypeConfig? @relation(fields: [plotTypeConfigId], references: [id])
+  priceHistory           PlotPriceRevision[]
+  reservation            PlotReservation?
+  sale                   DeveloperSale?
+  priceCalculations      PriceCalculationHistory[]
+  
+  @@unique([projectId, plotNumber])
+  @@map("developer_plots")
+}
+
+enum PlotStatus {
+  AVAILABLE
+  RESERVED
+  SOLD
+  WITHDRAWN
+  CANCELLED
+}
+
+model PricingRule {
+  id                 String   @id @default(auto()) @map("_id") @db.ObjectId
+  partnershipId      String?  @db.ObjectId
+  agencyId           String?  @db.ObjectId
+  projectId          String?  @db.ObjectId
+  plotTypeConfigId   String?  @db.ObjectId
+  developerId        String?  @db.ObjectId
+  name               String
+  description        String?
+  cessionPricePerSqm Float
+  minSurface         Float?
+  maxSurface         Float?
+  cashDiscountRate   Float?
+  volumeDiscountRate Float?
+  volumeThreshold    Int?
+  validFrom          DateTime
+  validUntil         DateTime?
+  priority           Int      @default(0)
+  active             Boolean  @default(true)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+  
+  partnership        Partnership? @relation(fields: [partnershipId], references: [id])
+  agency             RealEstateAgency? @relation(fields: [agencyId], references: [id])
+  project            DeveloperProject? @relation(fields: [projectId], references: [id])
+  plotTypeConfig     PlotTypeConfig? @relation(fields: [plotTypeConfigId], references: [id])
+  developer          Developer? @relation(fields: [developerId], references: [id])
+  
+  @@map("pricing_rules")
+}
+
+model MarginConfig {
+  id                   String   @id @default(auto()) @map("_id") @db.ObjectId
+  agencyId             String?  @db.ObjectId
+  agentId              String?  @db.ObjectId
+  plotTypeConfigId     String?  @db.ObjectId
+  name                 String
+  description          String?
+  marginType           MarginType
+  marginValue          Float?
+  marginPerSqm         Float?
+  minSurface           Float?
+  maxSurface           Float?
+  minPrice             Float?
+  maxPrice             Float?
+  tieredMargin         Json?
+  performanceBonus     Float?
+  performanceThreshold Int?
+  validFrom            DateTime
+  validUntil           DateTime?
+  active               Boolean  @default(true)
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+  
+  agency               RealEstateAgency? @relation(fields: [agencyId], references: [id])
+  agent                CommercialAgent? @relation(fields: [agentId], references: [id])
+  plotTypeConfig       PlotTypeConfig? @relation(fields: [plotTypeConfigId], references: [id])
+  
+  @@map("margin_configs")
+}
+
+enum MarginType {
+  PERCENTAGE
+  FIXED_AMOUNT
+  PER_SQM
+  TIERED
+}
+
+model CommissionStructure {
+  id                 String   @id @default(auto()) @map("_id") @db.ObjectId
+  agencyId           String   @db.ObjectId
+  agentId            String?  @db.ObjectId
+  name               String
+  description        String?
+  commissionType     CommissionType
+  baseCalculation    CommissionBase
+  rate               Float?
+  fixedAmount        Float?
+  amountPerSqm       Float?
+  tiers              Json?
+  minSaleAmount      Float?
+  requiresValidation Boolean  @default(false)
+  validFrom          DateTime
+  validUntil         DateTime?
+  active             Boolean  @default(true)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+  
+  agency             RealEstateAgency @relation(fields: [agencyId], references: [id])
+  agent              CommercialAgent? @relation(fields: [agentId], references: [id])
+  commissions        AgentCommission[]
+  
+  @@map("commission_structures")
+}
+
+enum CommissionType {
+  PERCENTAGE
+  FIXED
+  PER_SQM
+  TIERED
+}
+
+enum CommissionBase {
+  TOTAL_SALE
+  AGENCY_MARGIN
+  CESSION_PRICE
+}
+
+model PlotPriceRevision {
+  id               String   @id @default(auto()) @map("_id") @db.ObjectId
+  plotId           String?  @db.ObjectId
+  partnershipId    String?  @db.ObjectId
+  oldPricePerSqm   Float
+  newPricePerSqm   Float
+  changePercentage Float
+  effectiveDate    DateTime
+  reason           String
+  notes            String?
+  createdBy        String
+  createdByRole    String
+  createdAt        DateTime @default(now())
+  
+  plot             DeveloperPlot? @relation(fields: [plotId], references: [id])
+  partnership      Partnership? @relation(fields: [partnershipId], references: [id])
+  
+  @@map("plot_price_revisions")
+}
+
+model PlotReservation {
+  id                    String   @id @default(auto()) @map("_id") @db.ObjectId
+  plotId                String   @unique @db.ObjectId
+  agencyId              String   @db.ObjectId
+  agentId               String?  @db.ObjectId
+  reservationNumber     String   @unique
+  clientFirstName       String
+  clientLastName        String
+  clientEmail           String
+  clientPhone           String
+  clientAddress         String?
+  clientCIN             String?
+  clientCINUrl          String?
+  cessionPricePerSqm    Float
+  agencyMarginPerSqm    Float
+  surfaceArea           Float
+  cessionPrice          Float
+  agencyMargin          Float
+  finalPrice            Float
+  cashDiscount          Float    @default(0)
+  cashDiscountRate      Float    @default(0)
+  paymentType           PaymentType
+  downPayment           Float
+  downPaymentDate       DateTime?
+  balance               Float
+  totalPaid             Float    @default(0)
+  status                ReservationStatus @default(PENDING)
+  validatedAt           DateTime?
+  completedAt           DateTime?
+  cancelledAt           DateTime?
+  cancellationReason    String?
+  cancellationType      CancellationType?
+  contractModelUrl      String?
+  proofOfPayments       String[]
+  signedContractUrl     String?
+  notifiedToDeveloper   Boolean  @default(false)
+  notifiedAt            DateTime?
+  addedToJournal        Boolean  @default(false)
+  appliedPricingRuleId  String?
+  appliedMarginConfigId String?
+  calculationDetails    Json?
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+  
+  plot                  DeveloperPlot @relation(fields: [plotId], references: [id])
+  agency                RealEstateAgency @relation(fields: [agencyId], references: [id])
+  agent                 CommercialAgent? @relation(fields: [agentId], references: [id])
+  payments              ReservationPayment[]
+  sale                  DeveloperSale?
+  commissions           AgentCommission[]
+  
+  @@map("plot_reservations")
+}
+
+enum PaymentType {
+  CASH
+  INSTALLMENT
+}
+
+enum ReservationStatus {
+  PENDING
+  VALIDATED
+  COMPLETED
+  CANCELLED
+}
+
+enum CancellationType {
+  CLIENT_WITHDRAWAL
+  DEFAULT_PAYMENT
+  DEVELOPER_FAULT
+  MUTUAL_AGREEMENT
+}
+
+model ReservationPayment {
+  id            String   @id @default(auto()) @map("_id") @db.ObjectId
+  reservationId String   @db.ObjectId
+  amount        Float
+  paymentDate   DateTime @default(now())
+  dueDate       DateTime?
+  method        PaymentMethod
+  reference     String?
+  proofUrl      String?
+  status        PaymentStatus @default(COMPLETED)
+  lateDays      Int?
+  notes         String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  
+ reservation  PlotReservation @relation(fields: [reservationId], references: [id], onDelete: Cascade)
+  
+  @@map("reservation_payments")
+}
+
+enum PaymentMethod {
+  CASH
+  BANK_TRANSFER
+  CHECK
+  MOBILE_MONEY
+  CREDIT_CARD
+}
+
+enum PaymentStatus {
+  PENDING
+  COMPLETED
+  LATE
+  CANCELLED
+  REFUNDED
+}
+
+model DeveloperSale {
+  id                String   @id @default(auto()) @map("_id") @db.ObjectId
+  reservationId     String   @unique @db.ObjectId
+  plotId            String   @unique @db.ObjectId
+  agencyId          String   @db.ObjectId
+  developerId       String   @db.ObjectId
+  notaryId          String?  @db.ObjectId
+  saleNumber        String   @unique
+  totalPaid         Float
+  cessionAmount     Float
+  agencyAmount      Float
+  clientName        String
+  clientCINUrl      String
+  signedContractUrl String?
+  mutationDocuments String[]
+  saleDate          DateTime @default(now())
+  mutationDate      DateTime?
+  status            SaleStatus @default(COMPLETED)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  
+  reservation       PlotReservation @relation(fields: [reservationId], references: [id])
+  plot              DeveloperPlot @relation(fields: [plotId], references: [id])
+  agency            RealEstateAgency @relation(fields: [agencyId], references: [id])
+  developer         Developer @relation(fields: [developerId], references: [id])
+  notary            Notary? @relation(fields: [notaryId], references: [id])
+  
+  @@map("developer_sales")
+}
+
+enum SaleStatus {
+  COMPLETED
+  PENDING_MUTATION
+  MUTATED
+  CANCELLED
+}
+
+model AgentCommission {
+  id                String   @id @default(auto()) @map("_id") @db.ObjectId
+  reservationId     String   @db.ObjectId
+  agentId           String   @db.ObjectId
+  structureId       String?  @db.ObjectId
+  baseAmount        Float
+  commissionAmount  Float
+  performanceBonus  Float?
+  totalCommission   Float
+  status            CommissionStatus @default(PENDING)
+  paidAt            DateTime?
+  paymentReference  String?
+  calculatedAt      DateTime @default(now())
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  
+  reservation       PlotReservation @relation(fields: [reservationId], references: [id])
+  agent             CommercialAgent @relation(fields: [agentId], references: [id])
+  structure         CommissionStructure? @relation(fields: [structureId], references: [id])
+  
+  @@map("agent_commissions")
+}
+
+enum CommissionStatus {
+  PENDING
+  APPROVED
+  PAID
+  CANCELLED
+}
+
+model PriceCalculationHistory {
+  id                   String   @id @default(auto()) @map("_id") @db.ObjectId
+  plotId               String   @db.ObjectId
+  reservationId        String?
+  surfaceArea          Float
+  requestedBy          String
+  pricingRuleId        String?
+  marginConfigId       String?
+  cessionPricePerSqm   Float
+  agencyMarginPerSqm   Float
+  finalPricePerSqm     Float
+  cessionPrice         Float
+  agencyMargin         Float
+  finalPrice           Float
+  calculationBreakdown Json
+  createdAt            DateTime @default(now())
+  
+  plot                 DeveloperPlot @relation(fields: [plotId], references: [id])
+  
+  @@map("price_calculation_history")
+}
+
+// ==========================================
+// VAULT JURIDIQUE & CHANTIER (Conformité)
+// ==========================================
+
+model ProjectComplianceDocument {
+  id                String   @id @default(auto()) @map("_id") @db.ObjectId
+  projectId         String   @db.ObjectId
+  title             String
+  category          DocumentCategory
+  status            DocumentValidationStatus @default(PENDING)
+  authority         String?
+  fileUrl           String   // Lien permanent crypté Cloudinary
+  fileSize          Float?
+  fileType          String?
+  expirationDate    DateTime?
+  uploadedBy        String   // ID uploader
+  validatedBy       String?  // ID approbateur
+  validationDate    DateTime?
+  rejectionReason   String?
+  aiVerificationLog Json?    // Traces de l'analyse OpenAI
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  
+  project           DeveloperProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  
+  @@map("project_compliance_documents")
+}
+
+enum DocumentCategory {
+  JURIDIQUE
+  TECHNIQUE
+  ENVIRONNEMENTAL
+  FINANCIER
+}
+
+enum DocumentValidationStatus {
+  PENDING
+  VALIDATED
+  REJECTED
+  EXPIRED
+}
+
+// ==========================================
+// NOTAIRES ET AFFAIRES JURIDIQUES
+// ==========================================
+
+model Notary {
+  id                   String   @id @default(auto()) @map("_id") @db.ObjectId
+  firstName            String
+  lastName             String
+  email                String   @unique
+  phone                String
+  officeName           String
+  address              String
+  city                 String
+  rccm                 String?
+  status               NotaryStatus @default(ACTIVE)
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+  
+  sales                DeveloperSale[]
+  
+  @@map("notaries")
+}
+
+enum NotaryStatus {
+  ACTIVE
+  SUSPENDED
+}
