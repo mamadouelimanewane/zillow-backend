@@ -3,8 +3,8 @@ import {
   getAllProjects,
   getProjectById,
   createProject
-} from '../controllers/projectsController';
-import { authenticateJWT } from '../middlewares/authMiddleware';
+} from '../controllers/projectsController.js';
+import { authenticateJWT } from '../middlewares/authMiddleware.js';
 
 const router = Router();
 

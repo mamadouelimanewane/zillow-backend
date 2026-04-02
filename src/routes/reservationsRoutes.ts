@@ -4,8 +4,8 @@ import {
   getReservationById,
   createReservation,
   updateReservationStatus
-} from '../controllers/reservationsController';
-import { authenticateJWT } from '../middlewares/authMiddleware';
+} from '../controllers/reservationsController.js';
+import { authenticateJWT } from '../middlewares/authMiddleware.js';
 
 const router = Router();
 

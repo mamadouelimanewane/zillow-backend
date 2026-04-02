@@ -5,8 +5,8 @@ import {
   createProperty,
   updateProperty,
   deleteProperty
-} from '../controllers/propertiesController';
-import { authenticateJWT } from '../middlewares/authMiddleware';
+} from '../controllers/propertiesController.js';
+import { authenticateJWT } from '../middlewares/authMiddleware.js';
 
 const router = Router();
 

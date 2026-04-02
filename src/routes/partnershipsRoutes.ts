@@ -2,8 +2,8 @@ import { Router } from 'express';
 import {
   getAllPartnerships,
   createPartnership
-} from '../controllers/partnershipsController';
-import { authenticateJWT } from '../middlewares/authMiddleware';
+} from '../controllers/partnershipsController.js';
+import { authenticateJWT } from '../middlewares/authMiddleware.js';
 
 const router = Router();
 

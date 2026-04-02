@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import multer from 'multer';
-import { uploadDocument } from '../controllers/vaultController';
-import { authenticateJWT } from '../middlewares/authMiddleware';
+import { uploadDocument } from '../controllers/vaultController.js';
+import { authenticateJWT } from '../middlewares/authMiddleware.js';
 
 const upload = multer({ storage: multer.memoryStorage() });
 const router = Router();

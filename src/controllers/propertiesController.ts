@@ -5,12 +5,7 @@ const prisma = new PrismaClient();
 
 export const getAllProperties = async (req: Request, res: Response) => {
   try {
-    const properties = await prisma.property.findMany({
-      include: {
-        agency: true,
-        project: true
-      }
-    });
+    const properties = await prisma.property.findMany();
     res.json(properties);
   } catch (error) {
     console.error('Erreur getAllProperties:', error);
@@ -22,11 +17,7 @@ export const getPropertyById = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const property = await prisma.property.findUnique({
-      where: { id },
-      include: {
-        agency: true,
-        project: true
-      }
+      where: { id }
     });
 
     if (!property) {

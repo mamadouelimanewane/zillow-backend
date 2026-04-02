@@ -3,13 +3,13 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import { PrismaClient } from '@prisma/client';
 
-import authRoutes from './routes/authRoutes';
-import propertiesRoutes from './routes/propertiesRoutes';
-import projectsRoutes from './routes/projectsRoutes';
-import agenciesRoutes from './routes/agenciesRoutes';
-import reservationsRoutes from './routes/reservationsRoutes';
-import partnershipsRoutes from './routes/partnershipsRoutes';
-import vaultRoutes from './routes/vaultRoutes';
+import authRoutes from './routes/authRoutes.js';
+import propertiesRoutes from './routes/propertiesRoutes.js';
+import projectsRoutes from './routes/projectsRoutes.js';
+import agenciesRoutes from './routes/agenciesRoutes.js';
+import reservationsRoutes from './routes/reservationsRoutes.js';
+import partnershipsRoutes from './routes/partnershipsRoutes.js';
+import vaultRoutes from './routes/vaultRoutes.js';
 
 dotenv.config();
 

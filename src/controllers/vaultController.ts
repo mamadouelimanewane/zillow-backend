@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import { PrismaClient } from '@prisma/client';
-import { analyzeLegalDocument } from '../utils/ai-document-parser';
+import { analyzeLegalDocument } from '../utils/ai-document-parser.js';
 
 const prisma = new PrismaClient();
 
