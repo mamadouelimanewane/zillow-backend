@@ -8,6 +8,8 @@ import propertiesRoutes from './routes/propertiesRoutes';
 import projectsRoutes from './routes/projectsRoutes';
 import agenciesRoutes from './routes/agenciesRoutes';
 import reservationsRoutes from './routes/reservationsRoutes';
+import partnershipsRoutes from './routes/partnershipsRoutes';
+import vaultRoutes from './routes/vaultRoutes';
 
 dotenv.config();
 
@@ -29,6 +31,8 @@ app.use('/api/properties', propertiesRoutes);
 app.use('/api/projects', projectsRoutes);
 app.use('/api/agencies', agenciesRoutes);
 app.use('/api/reservations', reservationsRoutes);
+app.use('/api/partnerships', partnershipsRoutes);
+app.use('/api/vault', vaultRoutes);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
