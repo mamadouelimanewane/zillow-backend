@@ -19,7 +19,7 @@ export async function analyzeLegalDocument(fileData: any): Promise<AIAuditResult
 
         const mockVisonResponse = {
             authentique: true,
-            autorité: fileData.originalname.toLowerCase().includes('titre') ? 'Direction des Domaines' : 'Ministère de l\\'Urbanisme',
+            autorité: fileData.originalname.toLowerCase().includes('titre') ? 'Direction des Domaines' : 'Ministère de l\'Urbanisme',
             expiration: '2028-12-31',
             confidence: 0.98,
             suspiciouns: []
