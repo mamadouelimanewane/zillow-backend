@@ -5,6 +5,9 @@ import { PrismaClient } from '@prisma/client';
 
 import authRoutes from './routes/authRoutes';
 import propertiesRoutes from './routes/propertiesRoutes';
+import projectsRoutes from './routes/projectsRoutes';
+import agenciesRoutes from './routes/agenciesRoutes';
+import reservationsRoutes from './routes/reservationsRoutes';
 
 dotenv.config();
 
@@ -23,6 +26,9 @@ app.get('/', (req, res) => {
 // Load Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/properties', propertiesRoutes);
+app.use('/api/projects', projectsRoutes);
+app.use('/api/agencies', agenciesRoutes);
+app.use('/api/reservations', reservationsRoutes);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
