@@ -3,6 +3,9 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import { PrismaClient } from '@prisma/client';
 
+import authRoutes from './routes/authRoutes';
+import propertiesRoutes from './routes/propertiesRoutes';
+
 dotenv.config();
 
 const app = express();
@@ -12,20 +15,18 @@ const port = process.env.PORT || 5000;
 app.use(cors());
 app.use(express.json());
 
-// Basic health check endpoint
-app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok', message: 'Zillow Backend API is running' });
+// Main Root Endpoint
+app.get('/', (req, res) => {
+  res.json({ message: 'Welcome to Zillow Backend API' });
 });
 
-// Example route using Prisma
-app.get('/api/properties', async (req, res) => {
-  try {
-    const properties = await prisma.property.findMany();
-    res.json(properties);
-  } catch (error) {
-    console.error('Error fetching properties:', error);
-    res.status(500).json({ error: 'Failed to fetch properties' });
-  }
+// Load Routes
+app.use('/api/auth', authRoutes);
+app.use('/api/properties', propertiesRoutes);
+
+// Health check endpoint
+app.get('/api/health', (req, res) => {
+  res.json({ status: 'ok', message: 'Zillow Backend API is running' });
 });
 
 app.listen(port, () => {
