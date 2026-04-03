@@ -39,6 +39,15 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', message: 'Zillow Backend API is running' });
 });
 
-app.listen(port, () => {
-  console.log(`Server running on port ${port}`);
-});
+// Export Prisma for other modules if needed
+export { prisma };
+
+// Use conditional listen for dev/serverless
+if (process.env.NODE_ENV !== 'production' || !process.env.VERCEL) {
+  app.listen(port, () => {
+    console.log(`Server running on port ${port}`);
+  });
+}
+
+// Global Export for Vercel
+export default app;
